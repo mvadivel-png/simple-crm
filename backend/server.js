@@ -12,6 +12,14 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Middleware to handle both /api prefix (local) and without prefix (Vercel)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    req.url = req.url.replace('/api', '');
+  }
+  next();
+});
+
 // Database connection
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -53,7 +61,7 @@ initDb();
 // Routes
 
 // GET all contacts
-app.get('/api/contacts', async (req, res) => {
+app.get('/contacts', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM contacts ORDER BY id DESC');
     res.json(result.rows);
@@ -64,7 +72,7 @@ app.get('/api/contacts', async (req, res) => {
 });
 
 // GET single contact
-app.get('/api/contacts/:id', async (req, res) => {
+app.get('/contacts/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('SELECT * FROM contacts WHERE id = $1', [id]);
@@ -81,7 +89,7 @@ app.get('/api/contacts/:id', async (req, res) => {
 });
 
 // POST new contact
-app.post('/api/contacts', async (req, res) => {
+app.post('/contacts', async (req, res) => {
   try {
     const { first_name, last_name, phone } = req.body;
 
@@ -102,7 +110,7 @@ app.post('/api/contacts', async (req, res) => {
 });
 
 // PUT update contact
-app.put('/api/contacts/:id', async (req, res) => {
+app.put('/contacts/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { first_name, last_name, phone } = req.body;
@@ -128,7 +136,7 @@ app.put('/api/contacts/:id', async (req, res) => {
 });
 
 // DELETE contact
-app.delete('/api/contacts/:id', async (req, res) => {
+app.delete('/contacts/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM contacts WHERE id = $1 RETURNING *', [id]);
@@ -145,7 +153,7 @@ app.delete('/api/contacts/:id', async (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
